@@ -1,0 +1,83 @@
+
+etcd:
+/topic
+    /name
+        /meta
+            - N partitions
+            - key-based or not
+            - beginning offset
+            - last offset
+            - lock
+        /partitions
+            / partition-0
+                - host1:port
+                - ...
+                - hostN:port
+            / ...
+            / partition-N
+                - host1:port
+                - ...
+                - hostN:port
+        /consumer_groups
+            / group-"name"
+                - connection-0
+                - ...
+                - connection-N
+
+/nodes
+  /host-1:port
+  /...
+  /host-N:port
+
+create a topic (can ask any node)
+  1. create etcd topic record with initialized metadata
+  2. choose how to distribute partitions across hosts
+  3. send partition create request to each selected host
+      3a) each host should register themself with etcd
+
+producer produces message
+  1. determine the partition number of the value
+      1a) hash(key) % partitions if key-based
+      1b) round-robin otherwise
+  2. encode the message into protobuf
+  3. send the message to the partition leader
+  4. wait for success response
+
+partition leader receives message
+  1. leader fans-out message to followers
+  2. on any failure: roll-back followers to leader's timestamp
+  3. on all success: append message to leader and return success to producer
+  4. send offset-increment request to all followers
+  5. increase offset to leader
+
+partition receives message
+  1. append message to log
+  2. don't increase offset
+
+partition receives offset-increment request
+  1. increase end offset to requested value
+  2. fan-out notify all subscribed connections
+
+partition receives rollback message
+  1. decrease end offset requested value
+  2. set cursor to min(cursor, end offset)
+
+consumer subscribes to topic
+  1. select consumer_group id
+  2. get unique id from etcd
+  3. select the starting offset or default to current
+  4. open one connection to each partition, passing (consumer_group, unique id)
+
+partition receives consumer connection
+  1. create a goroutine per connection
+  2. set cursor to specified offset or end offset if not specified
+  3. register the connection in tho notify group
+  4. notify connection of latest offset to trigger a backfill if necessary
+
+connection manager notified
+  * this can be triggered via offset updated notification or timer ticked in batch-mode
+  1. do nothing if batch-mode enabled and conditions not met to dispatch
+  2. while cursor != latest offset
+      2a) request next message greater than cursor offsetr
+      2b) dispatch message to client
+      3c) increment offset to sent message's offset
