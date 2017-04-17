@@ -81,3 +81,8 @@ connection manager notified
       2a) request next message greater than cursor offsetr
       2b) dispatch message to client
       3c) increment offset to sent message's offset
+
+
+NOTES
+  * consumer should be able to "checkpoint"; this will save the
+    position of the consumer in each of the topic's partitions

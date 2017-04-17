@@ -1,0 +1,42 @@
+syntax = "proto3";
+package pb;
+
+service UltrabusNode {
+  rpc Subscribe(SubscribeRequest) returns (stream Messages) {}
+  rpc Publish(PublishRequest) returns (PublishResponse) {}
+}
+
+message Messages {
+  repeated MessageWithOffset messages = 1;
+}
+
+message Message {
+  bytes key = 1;
+  bytes value = 2;
+}
+
+message MessageWithOffset {
+  int64 offset = 1;
+  Message message = 2;
+}
+
+message ClientID {
+  string consumerGroup = 1;
+  string consumerID = 2;
+}
+
+message SubscribeRequest {
+  ClientID clientID = 1;
+  string topic = 2;
+  int32 partition = 3;
+}
+
+message PublishRequest {
+  string topic = 1;
+  int32 partition = 2;
+  repeated Message messages = 3;
+}
+
+message PublishResponse {
+  repeated int64 offsets = 1;
+}

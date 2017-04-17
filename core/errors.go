@@ -2,6 +2,8 @@ package core
 
 import (
 	"fmt"
+
+	"github.com/emef/ultrabus/pb"
 )
 
 type OffsetOutOfBoundsError struct {
@@ -14,5 +16,15 @@ func (e *OffsetOutOfBoundsError) Error() string {
 }
 
 type EmptyLogError struct{}
-
 func (e *EmptyLogError) Error() string { return "Empty log" }
+
+type DuplicateClientIDError struct {
+	ClientID *pb.ClientID
+}
+
+func (e *DuplicateClientIDError) Error() string {
+	return fmt.Sprintf("Duplicate ClientID %v", e.ClientID)
+}
+
+type PartitionStoppedError struct{}
+func (e *PartitionStoppedError) Error() string { return "Partition stopped" }

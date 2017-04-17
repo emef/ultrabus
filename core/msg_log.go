@@ -62,13 +62,18 @@ func (log *inMemoryMessageLog) Append(message *pb.Message) (int64, error) {
 }
 
 func (log *inMemoryMessageLog) CursorStart() (MessageLogCursor, error) {
-	return log.CursorAt(0)
+	return &inMemoryMessageLogCursor{0, log}, nil
 }
 
 func (log *inMemoryMessageLog) CursorEnd() (MessageLogCursor, error) {
 	lastOffset, err := log.LastOffset()
 	if err != nil {
-		return nil, err
+		switch err.(type) {
+		case *EmptyLogError:
+			return log.CursorStart()
+		default:
+			return nil, err
+		}
 	}
 
 	return &inMemoryMessageLogCursor{lastOffset + 1, log}, nil
