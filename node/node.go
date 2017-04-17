@@ -7,7 +7,8 @@ import (
 )
 
 type NodeService struct {
-	partition *Partition}
+	partition *Partition
+}
 
 func (node *NodeService) Subscribe(
 	request *pb.SubscribeRequest,
@@ -41,7 +42,6 @@ func (node *NodeService) Publish(
 
 	return &pb.PublishResponse{Offsets: offsets}, nil
 }
-
 
 func NewNodeService() pb.UltrabusNodeServer {
 	partition := NewInMemoryPartition()

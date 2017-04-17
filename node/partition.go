@@ -9,20 +9,20 @@ import (
 
 type ConnectionHandle struct {
 	partition *Partition
-	clientID *pb.ClientID
-	stream pb.UltrabusNode_SubscribeServer
-	cursor core.MessageLogCursor
-	filter MessageFilter
-	notify chan interface{}
-	done chan error
+	clientID  *pb.ClientID
+	stream    pb.UltrabusNode_SubscribeServer
+	cursor    core.MessageLogCursor
+	filter    MessageFilter
+	notify    chan interface{}
+	done      chan error
 }
 
 type Partition struct {
-  lock sync.RWMutex
-	log core.MessageLog
+	lock        sync.RWMutex
+	log         core.MessageLog
 	connections map[pb.ClientID]*ConnectionHandle
-	notify chan interface{}
-	done chan interface{}
+	notify      chan interface{}
+	done        chan interface{}
 }
 
 func NewInMemoryPartition() *Partition {
@@ -151,7 +151,7 @@ func (handle *ConnectionHandle) loop() {
 		select {
 		case <-handle.notify:
 			var messages []*pb.MessageWithOffset
-			for ; handle.cursor.HasNext() ; {
+			for handle.cursor.HasNext() {
 				msg, err := handle.cursor.Next()
 				if err != nil {
 					handle.partition.unregisterConsumer(handle.clientID, err)
@@ -160,7 +160,7 @@ func (handle *ConnectionHandle) loop() {
 
 				msgWithOffset := &pb.MessageWithOffset{
 					Message: msg,
-					Offset: handle.cursor.Pos()}
+					Offset:  handle.cursor.Pos()}
 
 				messages = append(messages, msgWithOffset)
 			}

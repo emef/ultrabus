@@ -16,6 +16,7 @@ func (e *OffsetOutOfBoundsError) Error() string {
 }
 
 type EmptyLogError struct{}
+
 func (e *EmptyLogError) Error() string { return "Empty log" }
 
 type DuplicateClientIDError struct {
@@ -27,4 +28,5 @@ func (e *DuplicateClientIDError) Error() string {
 }
 
 type PartitionStoppedError struct{}
+
 func (e *PartitionStoppedError) Error() string { return "Partition stopped" }
