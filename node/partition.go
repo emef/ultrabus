@@ -51,7 +51,8 @@ func (partition *Partition) Stop() {
 }
 
 func (partition *Partition) Append(msg *pb.Message) (int64, error) {
-	offset, err := partition.log.Append(msg)
+	receipt := partition.log.Append(msg)
+	<-receipt.Done()
 
 	// non-blocking notify
 	select {
@@ -59,7 +60,7 @@ func (partition *Partition) Append(msg *pb.Message) (int64, error) {
 	default:
 	}
 
-	return offset, err
+	return receipt.Read()
 }
 
 func (partition *Partition) unregisterConsumer(

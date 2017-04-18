@@ -1,6 +1,7 @@
 package core
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/emef/ultrabus/pb"
@@ -12,6 +13,50 @@ func TestInMemoryLog(t *testing.T) {
 	basicLogTests(t, log)
 }
 
+func TestReceipts(t *testing.T) {
+	assert := assert.New(t)
+	receipt := newReceipt()
+
+	// Not resolved yet
+	select {
+	case <-receipt.Done():
+		t.Fatalf("Receipt should not be resolved yet")
+	default:
+	}
+
+	// Still not resolved
+	offset, err := receipt.Read()
+	assert.NotNil(err)
+
+	receipt.succeed(16)
+
+	// Receipt is resolved now
+	select {
+	case <-receipt.Done():
+	default:
+		t.Fatalf("Receipt should be done")
+	}
+
+	offset, err = receipt.Read()
+	assert.Equal(offset, int64(16))
+	assert.Nil(err)
+
+	expectedErr := errors.New("failed")
+	receipt = newReceipt()
+	receipt.fail(expectedErr)
+
+	// Receipt is resolved now
+	select {
+	case <-receipt.Done():
+	default:
+		t.Fatalf("Receipt should be done")
+	}
+
+	offset, err = receipt.Read()
+	assert.Equal(offset, int64(-1))
+	assert.Equal(err, expectedErr)
+}
+
 func basicLogTests(t *testing.T, log MessageLog) {
 	assert := assert.New(t)
 
@@ -19,12 +64,17 @@ func basicLogTests(t *testing.T, log MessageLog) {
 	assert.NotNil(err)
 
 	msg1 := &pb.Message{Key: []byte("key_1"), Value: []byte("value_1")}
-	offset1, err := log.Append(msg1)
+	receipt := log.Append(msg1)
+	<-receipt.Done()
+	offset1, err := receipt.Read()
 	assert.Nil(err)
 	assert.False(offset1 < 0)
 
 	msg2 := &pb.Message{Key: []byte("key_1"), Value: []byte("value_1")}
-	offset2, err := log.Append(msg2)
+	receipt = log.Append(msg2)
+	<-receipt.Done()
+	offset2, err := receipt.Read()
+
 	assert.Nil(err)
 	assert.False(offset2 < 0, "Offset is negative")
 	assert.True(offset1 < offset2)

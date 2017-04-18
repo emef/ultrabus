@@ -22,7 +22,7 @@ type MessageLogCursor interface {
 
 type MessageLog interface {
 	// Append the message to the log, returning the offset of this message
-	Append(message *pb.Message) (int64, error)
+	Append(message *pb.Message) WriteReceipt
 
 	// Create a cursor at the start of the log
 	CursorStart() (MessageLogCursor, error)
@@ -40,6 +40,18 @@ type MessageLog interface {
 	LastOffset() (int64, error)
 }
 
+// When a message is being written a receipt is returned. This
+// receipt acts like a "future" and resolves when the message is
+// eventually processed successfully or not.
+type WriteReceipt interface {
+	// Channel to wait on for receipt resolution
+	Done() chan interface{}
+
+	// Read the receipt, if receipt hasn't been written this will
+	// return an error.
+	Read() (int64, error)
+}
+
 type inMemoryMessageLog struct {
 	lock     sync.RWMutex
 	messages []*pb.MessageWithOffset
@@ -51,7 +63,9 @@ func NewInMemoryMessageLog() MessageLog {
 		messages: nil}
 }
 
-func (log *inMemoryMessageLog) Append(message *pb.Message) (int64, error) {
+func (log *inMemoryMessageLog) Append(message *pb.Message) WriteReceipt {
+	receipt := newReceipt()
+
 	log.lock.Lock()
 	defer log.lock.Unlock()
 
@@ -59,8 +73,9 @@ func (log *inMemoryMessageLog) Append(message *pb.Message) (int64, error) {
 
 	msgWithOffset := &pb.MessageWithOffset{Message: message, Offset: offset}
 	log.messages = append(log.messages, msgWithOffset)
+	receipt.succeed(offset)
 
-	return offset, nil
+	return receipt
 }
 
 func (log *inMemoryMessageLog) CursorStart() (MessageLogCursor, error) {
@@ -161,4 +176,42 @@ func (cursor *inMemoryMessageLogCursor) Seek(offset int64) error {
 
 	cursor.pos = offset
 	return nil
+}
+
+type receiptImpl struct {
+	offset   int64
+	err      error
+	resolved bool
+	done     chan interface{}
+}
+
+func newReceipt() *receiptImpl {
+	return &receiptImpl{-1, nil, false, make(chan interface{})}
+}
+
+func (r *receiptImpl) Done() chan interface{} {
+	return r.done
+}
+
+func (r *receiptImpl) Read() (int64, error) {
+	if !r.resolved {
+		return -1, &ReceiptNotWrittenError{}
+	}
+
+	return r.offset, r.err
+}
+
+func (r *receiptImpl) resolve(offset int64, err error) {
+	r.resolved = true
+	r.offset = offset
+	r.err = err
+	close(r.done)
+}
+
+func (r *receiptImpl) succeed(offset int64) {
+	r.resolve(offset, nil)
+}
+
+func (r *receiptImpl) fail(err error) {
+	r.resolve(-1, err)
 }

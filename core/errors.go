@@ -38,3 +38,9 @@ type PartitionNotFoundError struct {
 func (e *PartitionNotFoundError) Error() string {
 	return fmt.Sprintf("Partition not found: %v", e.PartitionID)
 }
+
+type ReceiptNotWrittenError struct{}
+
+func (e *ReceiptNotWrittenError) Error() string {
+	return "Receipt has not yet been written"
+}
