@@ -30,3 +30,11 @@ func (e *DuplicateClientIDError) Error() string {
 type PartitionStoppedError struct{}
 
 func (e *PartitionStoppedError) Error() string { return "Partition stopped" }
+
+type PartitionNotFoundError struct {
+	PartitionID *pb.PartitionID
+}
+
+func (e *PartitionNotFoundError) Error() string {
+	return fmt.Sprintf("Partition not found: %v", e.PartitionID)
+}

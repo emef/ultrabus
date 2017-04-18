@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/emef/ultrabus/client"
 	"github.com/emef/ultrabus/pb"
-	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
 )
 
@@ -20,34 +19,28 @@ var (
 		"Messages to batch in each request")
 	intervalSeconds = flag.Int("interval_seconds", 1, "Seconds between publishing")
 	consumerGroup   = flag.String("consumer_group", "", "Consumer group name")
-	consumerID      = flag.String("consumer_id", "", "Unique consumer ID")
 )
 
 func main() {
 	flag.Parse()
 
-	conn, err := grpc.Dial(*serverAddr, grpc.WithInsecure())
+	client, err := client.NewSingleAddrBrokeredClient(
+		*consumerGroup, *serverAddr)
 	if err != nil {
-		grpclog.Fatalf("fail to dial: %v", err)
+		grpclog.Fatalf("Failed to create brokered client: %v", err)
 	}
-	defer conn.Close()
-	client := pb.NewUltrabusNodeClient(conn)
-
-	request := &pb.PublishRequest{Topic: *topic}
 
 	for i := 0; i < *numMessages; i++ {
 		messages := make([]*pb.Message, 0)
 		for j := 0; j < *messagesPerRequest; j++ {
 			id := j + i*(*messagesPerRequest)
 			message := &pb.Message{
-				Key:   []byte("ultrabus_publisher"),
+				Key:   []byte(fmt.Sprintf("key-%v", id)),
 				Value: []byte(fmt.Sprintf("value-%v", id))}
 			messages = append(messages, message)
 		}
 
-		request.Messages = messages
-		_, err := client.Publish(context.Background(), request)
-		if err != nil {
+		if err := client.Publish(*topic, messages); err != nil {
 			grpclog.Fatalf("Could not publish to topic %v: %v", *topic, err)
 		}
 

@@ -4,6 +4,45 @@ package pb;
 service UltrabusNode {
   rpc Subscribe(SubscribeRequest) returns (stream Messages) {}
   rpc Publish(PublishRequest) returns (PublishResponse) {}
+  rpc CreateTopic(CreateTopicRequest) returns (CreateTopicResponse) {}
+}
+
+message SubscribeRequest {
+  ClientID clientID = 1;
+  PartitionID partitionID = 2;
+}
+
+message PublishRequest {
+  PartitionID partitionID = 1;
+  repeated Message messages = 3;
+}
+
+message PublishResponse {
+  repeated int64 offsets = 1;
+}
+
+message CreateTopicRequest {
+  TopicMeta meta = 1;
+}
+
+message CreateTopicResponse {
+  bool ok = 1;
+}
+
+message ClientID {
+  string consumerGroup = 1;
+  string consumerID = 2;
+}
+
+message PartitionID {
+  string topic = 1;
+  int32 partition = 2;
+}
+
+message TopicMeta {
+  string topic = 1;
+  int32 partitions = 2;
+  int32 replicas = 3;
 }
 
 message Messages {
@@ -18,25 +57,4 @@ message Message {
 message MessageWithOffset {
   int64 offset = 1;
   Message message = 2;
-}
-
-message ClientID {
-  string consumerGroup = 1;
-  string consumerID = 2;
-}
-
-message SubscribeRequest {
-  ClientID clientID = 1;
-  string topic = 2;
-  int32 partition = 3;
-}
-
-message PublishRequest {
-  string topic = 1;
-  int32 partition = 2;
-  repeated Message messages = 3;
-}
-
-message PublishResponse {
-  repeated int64 offsets = 1;
 }
