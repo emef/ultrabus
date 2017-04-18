@@ -152,17 +152,15 @@ func (handle *ConnectionHandle) loop() {
 		case <-handle.notify:
 			var messages []*pb.MessageWithOffset
 			for handle.cursor.HasNext() {
-				msg, err := handle.cursor.Next()
+				msgWithOffset, err := handle.cursor.Next()
 				if err != nil {
 					handle.partition.unregisterConsumer(handle.clientID, err)
 					return
 				}
 
-				msgWithOffset := &pb.MessageWithOffset{
-					Message: msg,
-					Offset:  handle.cursor.Pos()}
-
-				messages = append(messages, msgWithOffset)
+				if handle.filter.Applies(msgWithOffset) {
+					messages = append(messages, msgWithOffset)
+				}
 			}
 
 			if len(messages) > 0 {

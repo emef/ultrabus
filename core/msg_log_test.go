@@ -46,14 +46,16 @@ func basicLogTests(t *testing.T, log MessageLog) {
 	// Get first message
 	msg, err := cursor.Next()
 	assert.Nil(err)
-	assert.Equal(msg, msg1)
+	assert.Equal(msg.Message, msg1)
+	assert.Equal(msg.Offset, offset1)
 	assert.True(cursor.HasNext())
 	assert.Equal(cursor.Pos(), offset2)
 
 	// Get second message
 	msg, err = cursor.Next()
 	assert.Nil(err)
-	assert.Equal(msg, msg2)
+	assert.Equal(msg.Message, msg2)
+	assert.Equal(msg.Offset, offset2)
 	assert.False(cursor.HasNext())
 
 	// We are out of bounds, expect error
@@ -67,7 +69,8 @@ func basicLogTests(t *testing.T, log MessageLog) {
 	msg, err = cursor.Next()
 	assert.NotNil(msg)
 	assert.Nil(err)
-	assert.Equal(msg, msg2)
+	assert.Equal(msg.Message, msg2)
+	assert.Equal(msg.Offset, offset2)
 
 	// Seek to invalid locations
 	err = cursor.Seek(-1)
@@ -85,7 +88,8 @@ func basicLogTests(t *testing.T, log MessageLog) {
 
 	msg, err = cursor.Next()
 	assert.Nil(err)
-	assert.Equal(msg, msg1)
+	assert.Equal(msg.Message, msg1)
+	assert.Equal(msg.Offset, offset1)
 
 	// Cursor at the end of the log
 	cursor, err = log.CursorEnd()

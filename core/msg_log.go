@@ -11,7 +11,7 @@ type MessageLogCursor interface {
 	HasNext() bool
 
 	// Returns the next message and moves cursor forward in the log
-	Next() (*pb.Message, error)
+	Next() (*pb.MessageWithOffset, error)
 
 	// Returns the current offset of the cursor
 	Pos() int64
@@ -42,7 +42,7 @@ type MessageLog interface {
 
 type inMemoryMessageLog struct {
 	lock     sync.RWMutex
-	messages []*pb.Message
+	messages []*pb.MessageWithOffset
 }
 
 func NewInMemoryMessageLog() MessageLog {
@@ -56,7 +56,9 @@ func (log *inMemoryMessageLog) Append(message *pb.Message) (int64, error) {
 	defer log.lock.Unlock()
 
 	offset := int64(len(log.messages))
-	log.messages = append(log.messages, message)
+
+	msgWithOffset := &pb.MessageWithOffset{Message: message, Offset: offset}
+	log.messages = append(log.messages, msgWithOffset)
 
 	return offset, nil
 }
@@ -112,7 +114,7 @@ func (log *inMemoryMessageLog) LastOffset() (int64, error) {
 	}
 }
 
-func (log *inMemoryMessageLog) read(pos int64) (*pb.Message, error) {
+func (log *inMemoryMessageLog) read(pos int64) (*pb.MessageWithOffset, error) {
 	log.lock.RLock()
 	defer log.lock.RUnlock()
 
@@ -134,7 +136,7 @@ func (cursor *inMemoryMessageLogCursor) HasNext() bool {
 	return err == nil && cursor.pos <= lastOffset
 }
 
-func (cursor *inMemoryMessageLogCursor) Next() (*pb.Message, error) {
+func (cursor *inMemoryMessageLogCursor) Next() (*pb.MessageWithOffset, error) {
 	msg, error := cursor.log.read(cursor.pos)
 	if error != nil {
 		return nil, error
