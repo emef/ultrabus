@@ -15,7 +15,7 @@ func (node *NodeService) Subscribe(
 	request *pb.SubscribeRequest,
 	stream pb.UltrabusNode_SubscribeServer) error {
 
-	grpclog.Printf("Connection opened from {%v}\n", request.ClientID)
+	grpclog.Printf("Connection opened from: %v\n", request.ClientID)
 
 	partition, ok := node.partitions[*request.PartitionID]
 	if !ok {

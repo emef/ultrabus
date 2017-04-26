@@ -13,7 +13,7 @@ import (
 var (
 	serverAddr = flag.String("server_addr", "127.0.0.1:10000",
 		"The server address in the format of host:port")
-	topic              = flag.String("topic", "", "Topic to subscribe to")
+	topic              = flag.String("topic", "topic", "Topic to subscribe to")
 	numMessages        = flag.Int("n", 10, "Number of messages to publish")
 	messagesPerRequest = flag.Int("messages_per_request", 1,
 		"Messages to batch in each request")
