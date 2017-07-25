@@ -78,7 +78,7 @@ connection manager notified
   * this can be triggered via offset updated notification or timer ticked in batch-mode
   1. do nothing if batch-mode enabled and conditions not met to dispatch
   2. while cursor != latest offset
-      2a) request next message greater than cursor offsetr
+      2a) request next message greater than cursor offset
       2b) dispatch message to client
       3c) increment offset to sent message's offset
 

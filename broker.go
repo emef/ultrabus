@@ -1,11 +1,10 @@
-package client
+package ultrabus
 
 import (
 	"io"
 	"sync"
 	"time"
 
-	"github.com/emef/ultrabus/core"
 	"github.com/emef/ultrabus/pb"
 	"golang.org/x/net/context"
 )
@@ -13,7 +12,7 @@ import (
 type TopicBroker struct {
 	topic                *pb.TopicMeta
 	clientID             *pb.ClientID
-	connectionManager core.ConnectionManager
+	connectionManager ConnectionManager
 }
 
 type BrokeredSubscription struct {
@@ -24,7 +23,7 @@ type BrokeredSubscription struct {
 func NewTopicBroker(
 	topic *pb.TopicMeta,
 	clientID *pb.ClientID,
-	connectionManager core.ConnectionManager) *TopicBroker {
+	connectionManager ConnectionManager) *TopicBroker {
 	return &TopicBroker{topic, clientID, connectionManager}
 }
 
@@ -72,7 +71,6 @@ func (broker *TopicBroker) Subscribe() (Subscription, error) {
 					in, err := stream.Recv()
 					if err == io.EOF || err != nil {
 						// TODO: differentiate between EOF and other error?
-						// TODO: move this whole goroutine out of broker (ManagedSubscription?)
 						stream = nil
 						break
 					}
@@ -99,13 +97,13 @@ func (broker *TopicBroker) Subscribe() (Subscription, error) {
 	return &BrokeredSubscription{messages, done}, nil
 }
 
-// TODO: this could be moved out of broker as well
+// TODO: make async
 func (broker *TopicBroker) Publish(messages []*pb.Message) error {
 	partitionIDToMessages := make(map[pb.PartitionID][]*pb.Message)
 	partitions := broker.topic.Partitions
 
 	for _, message := range messages {
-		partition, err := core.HashToPartition(message, partitions)
+		partition, err := HashToPartition(message, partitions)
 		if err != nil {
 			return err
 		}
@@ -129,6 +127,7 @@ func (broker *TopicBroker) Publish(messages []*pb.Message) error {
 			Messages: partitionMessages}
 
 		go func(request *pb.PublishRequest) {
+			// TODO: no more infinite retries...
 			for {
 				client, err := broker.connectionManager.GetWriteClient(
 					broker.topic, request.PartitionID.Partition)
@@ -149,6 +148,7 @@ func (broker *TopicBroker) Publish(messages []*pb.Message) error {
 
 	wg.Wait()
 
+	// TODO: propagate errors
 	return nil
 }
 

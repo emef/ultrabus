@@ -1,9 +1,8 @@
-package node
+package ultrabus
 
 import (
 	"sync"
 
-	"github.com/emef/ultrabus/core"
 	"github.com/emef/ultrabus/pb"
 )
 
@@ -11,7 +10,7 @@ type ConnectionHandle struct {
 	partition *Partition
 	clientID  *pb.ClientID
 	stream    pb.UltrabusNode_SubscribeServer
-	cursor    core.MessageLogCursor
+	cursor    MessageLogCursor
 	filter    MessageFilter
 	notify    chan interface{}
 	done      chan error
@@ -19,7 +18,7 @@ type ConnectionHandle struct {
 
 type Partition struct {
 	lock        sync.RWMutex
-	log         core.MessageLog
+	log         MessageLog
 	connections map[pb.ClientID]*ConnectionHandle
 	notify      chan interface{}
 	done        chan interface{}
@@ -28,7 +27,7 @@ type Partition struct {
 func NewInMemoryPartition() *Partition {
 	partition := &Partition{
 		sync.RWMutex{},
-		core.NewInMemoryMessageLog(),
+		NewInMemoryMessageLog(),
 		make(map[pb.ClientID]*ConnectionHandle),
 		make(chan interface{}, 1),
 		make(chan interface{}, 1)}
@@ -43,7 +42,7 @@ func (partition *Partition) Stop() {
 	defer partition.lock.Unlock()
 
 	for clientID := range partition.connections {
-		partition.unregisterConsumer(&clientID, &core.PartitionStoppedError{})
+		partition.unregisterConsumer(&clientID, &PartitionStoppedError{})
 	}
 
 	close(partition.done)
@@ -85,7 +84,7 @@ func (partition *Partition) RegisterConsumer(
 	partition.lock.RUnlock()
 
 	if alreadyExists {
-		err := &core.DuplicateClientIDError{clientID}
+		err := &DuplicateClientIDError{clientID}
 		partition.unregisterConsumer(clientID, err)
 	}
 

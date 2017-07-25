@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/emef/ultrabus/client"
+	"github.com/emef/ultrabus"
 	"github.com/emef/ultrabus/pb"
 	"google.golang.org/grpc/grpclog"
 )
@@ -24,8 +24,13 @@ var (
 func main() {
 	flag.Parse()
 
-	client, err := client.NewSingleAddrBrokeredClient(
-		*consumerGroup, *serverAddr)
+	discovery, err := ultrabus.NewSingleAddrDiscovery(*serverAddr)
+	if err != nil {
+		grpclog.Fatalf("Failed to create discovery: %v", err)
+	}
+
+	client, err := ultrabus.NewSingleAddrBrokeredClient(
+		*consumerGroup, discovery)
 	if err != nil {
 		grpclog.Fatalf("Failed to create brokered client: %v", err)
 	}

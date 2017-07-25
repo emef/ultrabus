@@ -1,4 +1,4 @@
-package core
+package ultrabus
 
 import (
 	"crypto/md5"

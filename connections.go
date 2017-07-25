@@ -1,4 +1,4 @@
-package core
+package ultrabus
 
 import (
 	"github.com/emef/ultrabus/pb"
@@ -14,7 +14,9 @@ type singleAddrConnectionManager struct {
 	client pb.UltrabusNodeClient
 }
 
-func NewSingleAddrConnectionManager(serverAddr string) (ConnectionManager, error) {
+func NewSingleAddrConnectionManager(discovery Discovery) (ConnectionManager, error) {
+	serverAddrs, _  := discovery.GetAllNodeAddrs()
+	serverAddr := serverAddrs[0]
 	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
 	if err != nil {
 		return nil, err

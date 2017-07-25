@@ -1,4 +1,4 @@
-package node
+package ultrabus
 
 import (
 	"github.com/emef/ultrabus/pb"

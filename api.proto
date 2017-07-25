@@ -5,6 +5,9 @@ service UltrabusNode {
   rpc Subscribe(SubscribeRequest) returns (stream Messages) {}
   rpc Publish(PublishRequest) returns (PublishResponse) {}
   rpc CreateTopic(CreateTopicRequest) returns (CreateTopicResponse) {}
+
+  // private
+  rpc Sync(SyncRequest) returns (SyncResponse) {}
 }
 
 message SubscribeRequest {
@@ -14,7 +17,7 @@ message SubscribeRequest {
 
 message PublishRequest {
   PartitionID partitionID = 1;
-  repeated Message messages = 3;
+  repeated Message messages = 2;
 }
 
 message PublishResponse {
@@ -27,6 +30,17 @@ message CreateTopicRequest {
 
 message CreateTopicResponse {
   bool ok = 1;
+}
+
+message SyncRequest {
+  PartitionID partitionID = 1;
+  int64 fromOffset = 2;
+  int32 maxMessages = 3;
+}
+
+message SyncResponse {
+  Messages messages = 1;
+  int64 maxOffset = 2;
 }
 
 message ClientID {

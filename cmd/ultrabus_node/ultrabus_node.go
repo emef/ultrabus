@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/emef/ultrabus/node"
+	"github.com/emef/ultrabus"
 	"github.com/emef/ultrabus/pb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
@@ -23,10 +23,9 @@ func main() {
 		grpclog.Fatalf("failed to listen: %v", err)
 	}
 
-	server := node.NewNodeService()
+	server := ultrabus.NewNodeService()
 
 	grpcServer := grpc.NewServer()
 	pb.RegisterUltrabusNodeServer(grpcServer, server)
 	grpcServer.Serve(lis)
-
 }

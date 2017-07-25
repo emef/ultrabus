@@ -1,7 +1,6 @@
-package node
+package ultrabus
 
 import (
-	"github.com/emef/ultrabus/core"
 	"github.com/emef/ultrabus/pb"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/grpclog"
@@ -19,7 +18,7 @@ func (node *NodeService) Subscribe(
 
 	partition, ok := node.partitions[*request.PartitionID]
 	if !ok {
-		return &core.PartitionNotFoundError{request.PartitionID}
+		return &PartitionNotFoundError{request.PartitionID}
 	}
 
 	handle, err := partition.RegisterConsumer(request.ClientID, stream)
@@ -36,7 +35,7 @@ func (node *NodeService) Publish(
 
 	partition, ok := node.partitions[*request.PartitionID]
 	if !ok {
-		return nil, &core.PartitionNotFoundError{request.PartitionID}
+		return nil, &PartitionNotFoundError{request.PartitionID}
 	}
 
 	offsets := make([]int64, len(request.Messages))
