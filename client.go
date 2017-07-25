@@ -27,7 +27,7 @@ func NewSingleAddrBrokeredClient(
 	consumerGroup string,
 	discovery Discovery) (UltrabusClient, error) {
 
-	connectionManager, _ := NewSingleAddrConnectionManager(discovery)
+	connectionManager := NewDiscoveryConnectionManager(discovery)
 
 	clientID := &pb.ClientID{
 		ConsumerGroup: consumerGroup,

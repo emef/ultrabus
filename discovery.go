@@ -11,7 +11,7 @@ type Discovery interface {
 	AdvertiseNodeAddr(serverAddr string, ttl time.Duration) error
 	GetAllNodeAddrs() ([]string, error)
 	GetLeaderAddr(partitionID *pb.PartitionID) (string, error)
-	GetReplicaAddr(partitionID *pb.PartitionID) (string, error)
+	GetPartitionAddrs(partitionID *pb.PartitionID) ([]string, error)
 
 	// Consumer group management
 	AdvertiseConsumer(
@@ -52,10 +52,10 @@ func (discovery *singleAddrDiscovery) GetLeaderAddr(
 	return discovery.serverAddr, nil
 }
 
-func (discovery *singleAddrDiscovery) GetReplicaAddr(
-	partitionID *pb.PartitionID) (string, error) {
+func (discovery *singleAddrDiscovery) GetPartitionAddrs(
+	partitionID *pb.PartitionID) ([]string, error) {
 
-	return discovery.serverAddr, nil
+	return []string{discovery.serverAddr}, nil
 }
 
 func (discovery *singleAddrDiscovery) AdvertiseConsumer(

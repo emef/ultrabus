@@ -37,11 +37,12 @@ func (broker *TopicBroker) Subscribe() (Subscription, error) {
 
 	for partition := int32(0); partition < broker.topic.Partitions; partition++ {
 		go func(partition int32) {
+			partitionId := &pb.PartitionID{
+				Topic: broker.topic.Topic,
+				Partition: partition}
 			request := &pb.SubscribeRequest{
 				ClientID:    broker.clientID,
-				PartitionID: &pb.PartitionID{
-					Topic: broker.topic.Topic,
-					Partition: partition}}
+				PartitionID: partitionId}
 
 			var stream pb.UltrabusNode_SubscribeClient = nil
 
@@ -53,8 +54,7 @@ func (broker *TopicBroker) Subscribe() (Subscription, error) {
 
 				default:
 					if stream == nil {
-						client, err := broker.connectionManager.GetReadClient(
-							broker.topic, partition)
+						client, err := broker.connectionManager.GetReadClient(partitionId)
 
 						if err == nil {
 							stream, err = client.Subscribe(context.Background(), request)
@@ -129,8 +129,7 @@ func (broker *TopicBroker) Publish(messages []*pb.Message) error {
 		go func(request *pb.PublishRequest) {
 			// TODO: no more infinite retries...
 			for {
-				client, err := broker.connectionManager.GetWriteClient(
-					broker.topic, request.PartitionID.Partition)
+				client, err := broker.connectionManager.GetWriteClient(request.PartitionID)
 
 				if err == nil {
 					_, err = client.Publish(context.Background(), request)
